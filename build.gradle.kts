@@ -41,7 +41,7 @@ subprojects {
             name = project.name
             description = "api-toolkit — ${project.name}"
             url = "https://github.com/skrastrek/api-toolkit"
-            inceptionYear = "2025"
+            inceptionYear = "2026"
 
             scm {
                 url = "https://github.com/skrastrek/api-toolkit"
