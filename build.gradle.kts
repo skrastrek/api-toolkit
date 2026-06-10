@@ -39,7 +39,8 @@ subprojects {
 
         pom {
             name = project.name
-            description = "api-toolkit — ${project.name}"
+            description =
+                "Kotlin utilities for API development — error handling, HTTP caching, JWT/HMAC authentication, OpenAPI schema generation, and AWS Lambda integration."
             url = "https://github.com/skrastrek/api-toolkit"
             inceptionYear = "2026"
 
