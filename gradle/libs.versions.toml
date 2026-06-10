@@ -1,6 +1,6 @@
 [versions]
 # Plugins
-kotlin = "2.3.21"
+kotlin = "2.4.0"
 
 ktlint = "14.2.0"
 
