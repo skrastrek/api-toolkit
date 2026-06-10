@@ -35,10 +35,10 @@ subprojects {
         publishToMavenCentral()
         signAllPublications()
 
-        coordinates("io.skrastrek", project.name, project.version.toString())
+        coordinates("io.skrastrek", "${rootProject.name}-${project.name}", project.version.toString())
 
         pom {
-            name = project.name
+            name = "${rootProject.name}-${project.name}"
             description =
                 "Kotlin utilities for API development — error handling, HTTP caching, JWT/HMAC authentication, OpenAPI schema generation, and AWS Lambda integration."
             url = "https://github.com/skrastrek/api-toolkit"

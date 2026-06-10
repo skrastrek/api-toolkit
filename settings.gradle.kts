@@ -1,11 +1,11 @@
 rootProject.name = "api-toolkit"
 
 include(
-    "api-model",
-    "api-openapi-annotations",
-    "api-http4k-errors",
-    "api-http4k-caching",
-    "api-http4k-openapi",
-    "api-http4k-auth",
-    "api-http4k-lambda",
+    "model",
+    "openapi-annotations",
+    "http4k-errors",
+    "http4k-caching",
+    "http4k-openapi",
+    "http4k-auth",
+    "http4k-lambda",
 )
