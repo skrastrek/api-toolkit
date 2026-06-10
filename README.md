@@ -1,6 +1,6 @@
 # api-toolkit
 
-[![CI](https://github.com/skrastrek/api-toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/skrastrek/api-toolkit/actions/workflows/ci.yml)
+[![CI](https://github.com/skrastrek/api-toolkit/actions/workflows/push-to-main.yml/badge.svg)](https://github.com/skrastrek/api-toolkit/actions/workflows/ci.yml)
 [![Maven Central](https://img.shields.io/maven-central/v/io.skrastrek/api-model)](https://central.sonatype.com/search?q=g:io.skrastrek)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
