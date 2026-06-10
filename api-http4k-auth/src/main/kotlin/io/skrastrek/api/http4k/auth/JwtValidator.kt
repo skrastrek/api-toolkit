@@ -76,7 +76,11 @@ data class JwtClaims(
 private fun fetchJwks(issuer: String): Map<String?, JwkKey> {
     val response =
         HttpClient.newHttpClient().send(
-            HttpRequest.newBuilder().uri(URI.create("$issuer/.well-known/jwks.json")).GET().build(),
+            HttpRequest
+                .newBuilder()
+                .uri(URI.create("$issuer/.well-known/jwks.json"))
+                .GET()
+                .build(),
             BodyHandlers.ofString(),
         )
     return json.decodeFromString<JwkSet>(response.body()).keys.associateBy { it.kid }
@@ -202,7 +206,12 @@ class JwtValidator(
     private fun JsonObject.toJwtClaims(): JwtClaims {
         val sub = this["sub"]?.jsonPrimitive?.content ?: throw MalformedJwt("Missing sub claim")
         val clientId = this["client_id"]?.jsonPrimitive?.content!!
-        val scope = this["scope"]?.jsonPrimitive?.content?.split(" ").orEmpty()
+        val scope =
+            this["scope"]
+                ?.jsonPrimitive
+                ?.content
+                ?.split(" ")
+                .orEmpty()
         return JwtClaims(
             sub = sub,
             clientId = clientId,

@@ -45,7 +45,13 @@ fun Error.Companion.sseResponseFilter(onError: (error: Error) -> Unit): SseFilte
             try {
                 next(request)
             } catch (ex: Throwable) {
-                SseResponse(ex.toError().also(onError).toResponse().status) {}
+                SseResponse(
+                    ex
+                        .toError()
+                        .also(onError)
+                        .toResponse()
+                        .status,
+                ) {}
             }
         }
     }

@@ -552,7 +552,8 @@ private class OpenApiSchemaRenderer<NODE : Any>(
         when (json.typeOf(this)) {
             JsonType.Object -> {
                 val fields =
-                    json.fields(this)
+                    json
+                        .fields(this)
                         .filter { (_, v) -> json.typeOf(v) != JsonType.Null }
                         .map { (k, v) -> k to v.stripNulls() }
                 json { obj(fields) }

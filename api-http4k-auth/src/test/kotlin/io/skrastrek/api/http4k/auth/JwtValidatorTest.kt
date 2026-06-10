@@ -195,10 +195,12 @@ private fun signToken(
     val h = enc.encodeToString(headerJson.toByteArray())
     val p = enc.encodeToString(payloadJson.toByteArray())
     val sig =
-        Signature.getInstance("SHA256withRSA").also {
-            it.initSign(keyPair.private)
-            it.update("$h.$p".toByteArray(Charsets.US_ASCII))
-        }.sign()
+        Signature
+            .getInstance("SHA256withRSA")
+            .also {
+                it.initSign(keyPair.private)
+                it.update("$h.$p".toByteArray(Charsets.US_ASCII))
+            }.sign()
     return "$h.$p.${enc.encodeToString(sig)}"
 }
 

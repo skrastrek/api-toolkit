@@ -34,7 +34,8 @@ class HmacAuthTokenGenerator<P>(
         val payloadElement = hmacJson.encodeToJsonElement(serializer, payload)
         val envelope = HmacEnvelope(payload = payloadElement, exp = exp)
         val envelopeEncoded =
-            hmacJson.encodeToString(HmacEnvelope.serializer(), envelope)
+            hmacJson
+                .encodeToString(HmacEnvelope.serializer(), envelope)
                 .toByteArray(Charsets.UTF_8)
                 .base64UrlEncode()
         val signature = hmacSha256(envelopeEncoded, secret).base64UrlEncode()
