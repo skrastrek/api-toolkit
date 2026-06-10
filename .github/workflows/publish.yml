@@ -39,11 +39,17 @@ jobs:
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
+      - name: Get version
+        id: version
+        run: |
+          TAG="${{ github.event.release.tag_name || inputs.version }}"
+          echo "version=${TAG#v}" >> $GITHUB_OUTPUT
+
       - name: Gradle publish
         id: gradle-publish
         run: >
           ./gradlew
-          -Pversion=${{ github.event.release.tag_name || inputs.version }}
+          -Pversion=${{ steps.version.outputs.version }}
           publishAndReleaseToMavenCentral
           --stacktrace
         env:
