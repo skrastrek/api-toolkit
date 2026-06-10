@@ -1,0 +1,35 @@
+name: Gradle build
+
+on:
+  workflow_call:
+    secrets:
+      gradle-encryption-key:
+        required: true
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out code
+        id: checkout
+        uses: actions/checkout@v6
+
+      - name: Java setup
+        id: java-setup
+        uses: actions/setup-java@v5
+        with:
+          distribution: ${{ vars.JAVA_DISTRIBUTION }}
+          java-version: ${{ vars.JAVA_VERSION }}
+
+      - name: Gradle setup
+        id: gradle-setup
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-encryption-key: ${{ secrets.gradle-encryption-key }}
+
+      - name: Gradle build
+        id: gradle-build
+        run: ./gradlew build

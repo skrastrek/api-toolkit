@@ -1,0 +1,17 @@
+name: Push to main
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: false
+
+jobs:
+  gradle-build:
+    name: Gradle build
+    uses: ./.github/workflows/gradle-build.yml
+    secrets:
+      gradle-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
