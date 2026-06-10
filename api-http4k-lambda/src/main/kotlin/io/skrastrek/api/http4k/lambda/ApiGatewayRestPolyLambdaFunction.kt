@@ -30,16 +30,16 @@ open class ApiGatewayRestPolyLambdaFunction(
         val request =
             runCatching {
                 inputStream.toApiGatewayProxyV1Event().toHttp4kRequest()
+            }.getOrElse { e ->
+                context.logger.log("Could not parse request: ${e.stackTraceToString()}")
+                outputStream.writePrelude(500, emptyMap())
+                outputStream.flush()
+                return
             }
-                .getOrElse { e ->
-                    context.logger.log("Could not parse request: ${e.stackTraceToString()}")
-                    outputStream.writePrelude(500, emptyMap())
-                    outputStream.flush()
-                    return
-                }
 
         val acceptsEventStream =
-            request.headerValues("Accept")
+            request
+                .headerValues("Accept")
                 .flatMap { (it ?: "").split(",") }
                 .any { it.trim().startsWith("text/event-stream") }
 
@@ -69,13 +69,12 @@ open class ApiGatewayRestPolyLambdaFunction(
         val sseResponse =
             runCatching {
                 sseHandler(request)
+            }.getOrElse { e ->
+                context.logger.log("Unhandled exception in SSE handler: ${e.stackTraceToString()}")
+                outputStream.writePrelude(500, emptyMap())
+                outputStream.flush()
+                return
             }
-                .getOrElse { e ->
-                    context.logger.log("Unhandled exception in SSE handler: ${e.stackTraceToString()}")
-                    outputStream.writePrelude(500, emptyMap())
-                    outputStream.flush()
-                    return
-                }
 
         outputStream.writePrelude(
             sseResponse.status.code,
@@ -113,13 +112,12 @@ open class ApiGatewayRestPolyLambdaFunction(
         val httpResponse =
             runCatching {
                 httpHandler(request)
+            }.getOrElse { e ->
+                context.logger.log("Unhandled exception in HTTP handler: ${e.stackTraceToString()}")
+                outputStream.writePrelude(500, emptyMap())
+                outputStream.flush()
+                return
             }
-                .getOrElse { e ->
-                    context.logger.log("Unhandled exception in HTTP handler: ${e.stackTraceToString()}")
-                    outputStream.writePrelude(500, emptyMap())
-                    outputStream.flush()
-                    return
-                }
 
         outputStream.writePrelude(
             httpResponse.status.code,

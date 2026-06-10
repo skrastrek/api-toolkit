@@ -19,7 +19,9 @@ private data class TestPayload(
 )
 
 private val testSerializer = TestPayload.serializer()
-private val testPrincipalLens = org.http4k.lens.RequestKey.optional<TestPayload>("test-principal")
+private val testPrincipalLens =
+    org.http4k.lens.RequestKey
+        .optional<TestPayload>("test-principal")
 
 class HmacTokenTest {
     private val generator = HmacAuthTokenGenerator(SECRET, testSerializer)

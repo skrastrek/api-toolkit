@@ -12,7 +12,8 @@ fun <T : Versionable> T.ifNoneMatch(
     noneMatch: (ETag?) -> Response,
     match: (ETag) -> Response,
 ): Response =
-    request.ifNoneMatch()
+    request
+        .ifNoneMatch()
         ?.let { eTag ->
             if (eTag.value == md5()) {
                 match(eTag)
@@ -26,7 +27,8 @@ fun <T : Versionable> List<T>.ifNoneMatch(
     noneMatch: (ETag?) -> Response,
     match: (ETag) -> Response,
 ): Response =
-    request.ifNoneMatch()
+    request
+        .ifNoneMatch()
         ?.let { eTag ->
             if (eTag.value == md5()) {
                 match(eTag)
@@ -40,7 +42,8 @@ fun <T : Modifiable> T.ifModifiedSince(
     modifiedSince: (Instant?) -> Response,
     notModifiedSince: (Instant) -> Response,
 ): Response =
-    request.ifModifiedSince()
+    request
+        .ifModifiedSince()
         ?.let { lastModified ->
             if (hasBeenModifiedSince(lastModified)) {
                 modifiedSince(lastModified)
@@ -54,7 +57,8 @@ fun <T : Modifiable> List<T>.ifAnyModifiedSince(
     modifiedSince: (Instant?) -> Response,
     notModifiedSince: (Instant) -> Response,
 ): Response =
-    request.ifModifiedSince()
+    request
+        .ifModifiedSince()
         ?.let { lastModified ->
             if (any { it.hasBeenModifiedSince(lastModified) }) {
                 modifiedSince(lastModified)

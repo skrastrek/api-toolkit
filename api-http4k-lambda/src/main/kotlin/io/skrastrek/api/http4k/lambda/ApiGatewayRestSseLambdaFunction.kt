@@ -50,24 +50,22 @@ open class ApiGatewayRestSseLambdaFunction(
         val request =
             runCatching {
                 inputStream.toApiGatewayProxyV1Event().toHttp4kRequest()
+            }.getOrElse { e ->
+                context.logger.log("Could not parse request: ${e.stackTraceToString()}")
+                outputStream.writePrelude(500, emptyMap())
+                outputStream.flush()
+                return
             }
-                .getOrElse { e ->
-                    context.logger.log("Could not parse request: ${e.stackTraceToString()}")
-                    outputStream.writePrelude(500, emptyMap())
-                    outputStream.flush()
-                    return
-                }
 
         val sseResponse =
             runCatching {
                 sseHandler(request)
+            }.getOrElse { e ->
+                context.logger.log("Unhandled exception: ${e.stackTraceToString()}")
+                outputStream.writePrelude(500, emptyMap())
+                outputStream.flush()
+                return
             }
-                .getOrElse { e ->
-                    context.logger.log("Unhandled exception: ${e.stackTraceToString()}")
-                    outputStream.writePrelude(500, emptyMap())
-                    outputStream.flush()
-                    return
-                }
 
         outputStream.writePrelude(
             sseResponse.status.code,
@@ -102,10 +100,12 @@ internal fun InputStream.toApiGatewayProxyV1Event(): ApiGatewayProxyV1Event = js
 
 internal fun ApiGatewayProxyV1Event.toHttp4kRequest(): Request {
     val headers: Parameters =
-        multiValueHeaders.ifEmpty { headers.mapValues { listOf(it.value) } }
+        multiValueHeaders
+            .ifEmpty { headers.mapValues { listOf(it.value) } }
             .flatMap { (k, vs) -> vs.map { k to it } }
     val queryParams: Parameters =
-        multiValueQueryStringParameters.ifEmpty { queryStringParameters.mapValues { listOf(it.value) } }
+        multiValueQueryStringParameters
+            .ifEmpty { queryStringParameters.mapValues { listOf(it.value) } }
             .flatMap { (k, vs) -> vs.map { k to it } }
 
     val bodyBytes =

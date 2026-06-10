@@ -9,13 +9,33 @@ import org.http4k.sse.SseFilter
 object ApiGatewayFilters {
     fun stripBasePath(prefix: String): Filter =
         { next ->
-            { req -> next(req.uri(req.uri.path(req.uri.path.removePrefix(prefix).ifEmpty { "/" }))) }
+            { req ->
+                next(
+                    req.uri(
+                        req.uri.path(
+                            req.uri.path
+                                .removePrefix(prefix)
+                                .ifEmpty { "/" },
+                        ),
+                    ),
+                )
+            }
         }
 }
 
 object ApiGatewaySseFilters {
     fun stripBasePath(prefix: String): SseFilter =
         { next ->
-            { req -> next(req.uri(req.uri.path(req.uri.path.removePrefix(prefix).ifEmpty { "/" }))) }
+            { req ->
+                next(
+                    req.uri(
+                        req.uri.path(
+                            req.uri.path
+                                .removePrefix(prefix)
+                                .ifEmpty { "/" },
+                        ),
+                    ),
+                )
+            }
         }
 }

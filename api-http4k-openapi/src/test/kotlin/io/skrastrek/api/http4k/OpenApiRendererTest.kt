@@ -284,7 +284,11 @@ class OpenApiRendererTest {
     @Test
     fun `schema ref node points to overrideDefinitionId`() {
         val schema = renderer.toSchema(itemNode(), "Item", "")
-        assertEquals("#/components/schemas/Item", schema.node.jsonObject[$$"$ref"]!!.jsonPrimitive.content)
+        assertEquals(
+            "#/components/schemas/Item",
+            schema.node.jsonObject[$$"$ref"]!!
+                .jsonPrimitive.content,
+        )
     }
 
     // --- Required fields for regular classes ---
@@ -292,7 +296,11 @@ class OpenApiRendererTest {
     @Test
     fun `required fields include non-nullable non-optional properties`() {
         val schema = renderer.toSchema(itemNode(), "Item", "")
-        val required = schema.definitions["Item"]!!.jsonObject["required"]!!.jsonArray.map { it.jsonPrimitive.content }
+        val required =
+            schema.definitions["Item"]!!
+                .jsonObject["required"]!!
+                .jsonArray
+                .map { it.jsonPrimitive.content }
         assertContains(required, "id")
         assertContains(required, "name")
         assertContains(required, "quantity")
@@ -301,14 +309,22 @@ class OpenApiRendererTest {
     @Test
     fun `required fields exclude nullable properties`() {
         val schema = renderer.toSchema(itemNode(), "Item", "")
-        val required = schema.definitions["Item"]!!.jsonObject["required"]!!.jsonArray.map { it.jsonPrimitive.content }
+        val required =
+            schema.definitions["Item"]!!
+                .jsonObject["required"]!!
+                .jsonArray
+                .map { it.jsonPrimitive.content }
         assertFalse("description" in required)
     }
 
     @Test
     fun `required fields exclude properties with default values`() {
         val schema = renderer.toSchema(itemNode(), "Item", "")
-        val required = schema.definitions["Item"]!!.jsonObject["required"]!!.jsonArray.map { it.jsonPrimitive.content }
+        val required =
+            schema.definitions["Item"]!!
+                .jsonObject["required"]!!
+                .jsonArray
+                .map { it.jsonPrimitive.content }
         assertFalse("tags" in required)
     }
 
@@ -340,7 +356,11 @@ class OpenApiRendererTest {
     @Test
     fun `sealed type discriminator mapping contains all subclass serial names`() {
         val schema = renderer.toSchema(widgetNode(), "Widget", "")
-        val mapping = schema.definitions["Widget"]!!.jsonObject["discriminator"]!!.jsonObject["mapping"]!!.jsonObject
+        val mapping =
+            schema.definitions["Widget"]!!
+                .jsonObject["discriminator"]!!
+                .jsonObject["mapping"]!!
+                .jsonObject
         assertContains(mapping.keys, "basic")
         assertContains(mapping.keys, "featured")
     }
@@ -348,7 +368,11 @@ class OpenApiRendererTest {
     @Test
     fun `sealed type discriminator mapping values reference subclass schemas by class name`() {
         val schema = renderer.toSchema(widgetNode(), "Widget", "")
-        val mapping = schema.definitions["Widget"]!!.jsonObject["discriminator"]!!.jsonObject["mapping"]!!.jsonObject
+        val mapping =
+            schema.definitions["Widget"]!!
+                .jsonObject["discriminator"]!!
+                .jsonObject["mapping"]!!
+                .jsonObject
         assertEquals("#/components/schemas/BasicWidgetResponse", mapping["basic"]!!.jsonPrimitive.content)
         assertEquals("#/components/schemas/FeaturedWidgetResponse", mapping["featured"]!!.jsonPrimitive.content)
     }
@@ -365,14 +389,22 @@ class OpenApiRendererTest {
     @Test
     fun `sealed subclass required fields include discriminator`() {
         val schema = renderer.toSchema(widgetNode(), "Widget", "")
-        val required = schema.definitions["BasicWidgetResponse"]!!.jsonObject["required"]!!.jsonArray.map { it.jsonPrimitive.content }
+        val required =
+            schema.definitions["BasicWidgetResponse"]!!
+                .jsonObject["required"]!!
+                .jsonArray
+                .map { it.jsonPrimitive.content }
         assertContains(required, "type")
     }
 
     @Test
     fun `sealed subclass required fields include non-nullable non-optional properties`() {
         val schema = renderer.toSchema(widgetNode(), "Widget", "")
-        val required = schema.definitions["BasicWidgetResponse"]!!.jsonObject["required"]!!.jsonArray.map { it.jsonPrimitive.content }
+        val required =
+            schema.definitions["BasicWidgetResponse"]!!
+                .jsonObject["required"]!!
+                .jsonArray
+                .map { it.jsonPrimitive.content }
         assertContains(required, "id")
         assertContains(required, "name")
         assertContains(required, "count")
@@ -381,7 +413,11 @@ class OpenApiRendererTest {
     @Test
     fun `sealed subclass required fields exclude nullable optional properties`() {
         val schema = renderer.toSchema(widgetNode(), "Widget", "")
-        val required = schema.definitions["BasicWidgetResponse"]!!.jsonObject["required"]!!.jsonArray.map { it.jsonPrimitive.content }
+        val required =
+            schema.definitions["BasicWidgetResponse"]!!
+                .jsonObject["required"]!!
+                .jsonArray
+                .map { it.jsonPrimitive.content }
         assertFalse("category" in required)
     }
 
@@ -390,10 +426,20 @@ class OpenApiRendererTest {
     @Test
     fun `sealed subclass discriminator property is a constant string enum`() {
         val schema = renderer.toSchema(widgetNode(), "Widget", "")
-        val typeProperty = schema.definitions["BasicWidgetResponse"]!!.jsonObject["properties"]!!.jsonObject["type"]!!.jsonObject
+        val typeProperty =
+            schema.definitions["BasicWidgetResponse"]!!
+                .jsonObject["properties"]!!
+                .jsonObject["type"]!!
+                .jsonObject
         assertEquals("string", typeProperty["type"]!!.jsonPrimitive.content)
         assertEquals(1, typeProperty["enum"]!!.jsonArray.size)
-        assertEquals("basic", typeProperty["enum"]!!.jsonArray.first().jsonPrimitive.content)
+        assertEquals(
+            "basic",
+            typeProperty["enum"]!!
+                .jsonArray
+                .first()
+                .jsonPrimitive.content,
+        )
     }
 
     // --- Sealed subclass schemas: property types ---
@@ -426,7 +472,10 @@ class OpenApiRendererTest {
         val featuredNode = TestSerialization.asJsonObject(featuredExample())
         val schema = renderer.toSchema(featuredNode, "Widget", "")
         val featuresProperty =
-            schema.definitions["FeaturedWidgetResponse"]!!.jsonObject["properties"]!!.jsonObject["features"]!!.jsonObject
+            schema.definitions["FeaturedWidgetResponse"]!!
+                .jsonObject["properties"]!!
+                .jsonObject["features"]!!
+                .jsonObject
         assertEquals("array", featuresProperty["type"]!!.jsonPrimitive.content)
         assertContains(featuresProperty.keys, "items")
     }
@@ -434,7 +483,11 @@ class OpenApiRendererTest {
     @Test
     fun `sealed subclass enum property generates ref to named enum schema`() {
         val schema = renderer.toSchema(widgetNode(), "Widget", "")
-        val categoryProperty = schema.definitions["BasicWidgetResponse"]!!.jsonObject["properties"]!!.jsonObject["category"]!!.jsonObject
+        val categoryProperty =
+            schema.definitions["BasicWidgetResponse"]!!
+                .jsonObject["properties"]!!
+                .jsonObject["category"]!!
+                .jsonObject
         assertEquals("#/components/schemas/WidgetCategory", categoryProperty[$$"$ref"]!!.jsonPrimitive.content)
     }
 
@@ -464,7 +517,9 @@ class OpenApiRendererTest {
         val node = TestSerialization.asJsonObject(CreateItemRequest(name = "Widget", quantity = 5))
         val schema = renderer.toSchema(node, "CreateItem", "")
         val required =
-            schema.definitions["CreateItem"]!!.jsonObject["required"]!!.jsonArray
+            schema.definitions["CreateItem"]!!
+                .jsonObject["required"]!!
+                .jsonArray
                 .map { it.jsonPrimitive.content }
         assertContains(required, "name")
         assertContains(required, "quantity")
@@ -475,7 +530,9 @@ class OpenApiRendererTest {
         val node = TestSerialization.asJsonObject(CreateItemRequest(name = "Widget", quantity = 5))
         val schema = renderer.toSchema(node, "CreateItem", "")
         val required =
-            schema.definitions["CreateItem"]!!.jsonObject["required"]!!.jsonArray
+            schema.definitions["CreateItem"]!!
+                .jsonObject["required"]!!
+                .jsonArray
                 .map { it.jsonPrimitive.content }
         assertFalse("description" in required)
     }
@@ -485,7 +542,9 @@ class OpenApiRendererTest {
         val node = TestSerialization.asJsonObject(CreateItemRequest(name = "Widget", quantity = 5))
         val schema = renderer.toSchema(node, "CreateItem", "")
         val required =
-            schema.definitions["CreateItem"]!!.jsonObject["required"]!!.jsonArray
+            schema.definitions["CreateItem"]!!
+                .jsonObject["required"]!!
+                .jsonArray
                 .map { it.jsonPrimitive.content }
         assertFalse("tags" in required)
     }
@@ -501,14 +560,20 @@ class OpenApiRendererTest {
     @Test
     fun `request body object path schema ref points to overrideDefinitionId`() {
         val schema = renderer.toSchema(CreateItemRequest(name = "Widget", quantity = 5), "CreateItem", "")
-        assertEquals("#/components/schemas/CreateItem", schema.node.jsonObject[$$"$ref"]!!.jsonPrimitive.content)
+        assertEquals(
+            "#/components/schemas/CreateItem",
+            schema.node.jsonObject[$$"$ref"]!!
+                .jsonPrimitive.content,
+        )
     }
 
     @Test
     fun `request body object path required fields include non-nullable non-optional properties`() {
         val schema = renderer.toSchema(CreateItemRequest(name = "Widget", quantity = 5), "CreateItem", "")
         val required =
-            schema.definitions["CreateItem"]!!.jsonObject["required"]!!.jsonArray
+            schema.definitions["CreateItem"]!!
+                .jsonObject["required"]!!
+                .jsonArray
                 .map { it.jsonPrimitive.content }
         assertContains(required, "name")
         assertContains(required, "quantity")
@@ -518,7 +583,9 @@ class OpenApiRendererTest {
     fun `request body object path required fields exclude nullable properties`() {
         val schema = renderer.toSchema(CreateItemRequest(name = "Widget", quantity = 5), "CreateItem", "")
         val required =
-            schema.definitions["CreateItem"]!!.jsonObject["required"]!!.jsonArray
+            schema.definitions["CreateItem"]!!
+                .jsonObject["required"]!!
+                .jsonArray
                 .map { it.jsonPrimitive.content }
         assertFalse("description" in required)
     }
@@ -527,7 +594,9 @@ class OpenApiRendererTest {
     fun `request body object path required fields exclude properties with default values`() {
         val schema = renderer.toSchema(CreateItemRequest(name = "Widget", quantity = 5), "CreateItem", "")
         val required =
-            schema.definitions["CreateItem"]!!.jsonObject["required"]!!.jsonArray
+            schema.definitions["CreateItem"]!!
+                .jsonObject["required"]!!
+                .jsonArray
                 .map { it.jsonPrimitive.content }
         assertFalse("tags" in required)
     }
@@ -538,7 +607,11 @@ class OpenApiRendererTest {
     fun `array field with empty list example includes items from descriptor - node path`() {
         val node = TestSerialization.asJsonObject(CreateItemRequest(name = "Widget", quantity = 5))
         val schema = renderer.toSchema(node, "CreateItem", "")
-        val tagsProperty = schema.definitions["CreateItem"]!!.jsonObject["properties"]!!.jsonObject["tags"]!!.jsonObject
+        val tagsProperty =
+            schema.definitions["CreateItem"]!!
+                .jsonObject["properties"]!!
+                .jsonObject["tags"]!!
+                .jsonObject
         assertEquals("array", tagsProperty["type"]!!.jsonPrimitive.content)
         assertContains(tagsProperty.keys, "items")
         assertEquals("string", tagsProperty["items"]!!.jsonObject["type"]!!.jsonPrimitive.content)
@@ -547,7 +620,11 @@ class OpenApiRendererTest {
     @Test
     fun `array field with empty list example includes items from descriptor - object path`() {
         val schema = renderer.toSchema(CreateItemRequest(name = "Widget", quantity = 5), "CreateItem", "")
-        val tagsProperty = schema.definitions["CreateItem"]!!.jsonObject["properties"]!!.jsonObject["tags"]!!.jsonObject
+        val tagsProperty =
+            schema.definitions["CreateItem"]!!
+                .jsonObject["properties"]!!
+                .jsonObject["tags"]!!
+                .jsonObject
         assertEquals("array", tagsProperty["type"]!!.jsonPrimitive.content)
         assertContains(tagsProperty.keys, "items")
         assertEquals("string", tagsProperty["items"]!!.jsonObject["type"]!!.jsonPrimitive.content)
@@ -563,7 +640,10 @@ class OpenApiRendererTest {
             )
         val schema = renderer.toSchema(node, "Container", "")
         val tagsProperty =
-            schema.definitions["Container"]!!.jsonObject["properties"]!!.jsonObject["tags"]!!.jsonObject
+            schema.definitions["Container"]!!
+                .jsonObject["properties"]!!
+                .jsonObject["tags"]!!
+                .jsonObject
         assertEquals("array", tagsProperty["type"]!!.jsonPrimitive.content)
         assertContains(tagsProperty.keys, "items")
         assertEquals(
@@ -599,7 +679,11 @@ class OpenApiRendererTest {
     fun `nested object field generates named ref schema instead of hash-based name - node path`() {
         val node = TestSerialization.asJsonObject(ArticleResponse(id = "a1", title = "Title", author = AuthorResponse(name = "Alice")))
         val schema = renderer.toSchema(node, "Article", "")
-        val authorProperty = schema.definitions["Article"]!!.jsonObject["properties"]!!.jsonObject["author"]!!.jsonObject
+        val authorProperty =
+            schema.definitions["Article"]!!
+                .jsonObject["properties"]!!
+                .jsonObject["author"]!!
+                .jsonObject
         assertEquals("#/components/schemas/AuthorResponse", authorProperty[$$"$ref"]!!.jsonPrimitive.content)
     }
 
@@ -619,7 +703,11 @@ class OpenApiRendererTest {
                 "CreateArticle",
                 "",
             )
-        val authorProperty = schema.definitions["CreateArticle"]!!.jsonObject["properties"]!!.jsonObject["author"]!!.jsonObject
+        val authorProperty =
+            schema.definitions["CreateArticle"]!!
+                .jsonObject["properties"]!!
+                .jsonObject["author"]!!
+                .jsonObject
         assertEquals("#/components/schemas/AuthorResponse", authorProperty[$$"$ref"]!!.jsonPrimitive.content)
     }
 
@@ -640,7 +728,10 @@ class OpenApiRendererTest {
         val node = TestSerialization.asJsonObject(ContainerResponse(id = "c1", tags = emptyList()))
         val schema = renderer.toSchema(node, "Container", "")
         val tagsProperty =
-            schema.definitions["Container"]!!.jsonObject["properties"]!!.jsonObject["tags"]!!.jsonObject
+            schema.definitions["Container"]!!
+                .jsonObject["properties"]!!
+                .jsonObject["tags"]!!
+                .jsonObject
         assertEquals("array", tagsProperty["type"]!!.jsonPrimitive.content)
         assertContains(tagsProperty.keys, "items")
         assertEquals(
@@ -662,7 +753,10 @@ class OpenApiRendererTest {
         val node = TestSerialization.asJsonObject(FolderResponse(id = "f1", labels = listOf(LabelResponse(name = "env", value = "prod"))))
         val schema = renderer.toSchema(node, "Folder", "")
         val labelsProperty =
-            schema.definitions["Folder"]!!.jsonObject["properties"]!!.jsonObject["labels"]!!.jsonObject
+            schema.definitions["Folder"]!!
+                .jsonObject["properties"]!!
+                .jsonObject["labels"]!!
+                .jsonObject
         assertEquals("array", labelsProperty["type"]!!.jsonPrimitive.content)
         assertContains(labelsProperty.keys, "items")
         assertEquals(
@@ -713,7 +807,11 @@ class OpenApiRendererTest {
     fun `nullable object field absent from example generates ref to nested type - node path`() {
         val node = TestSerialization.asJsonObject(ProfileResponse(id = "p1", name = "Alice"))
         val schema = renderer.toSchema(node, "Profile", "")
-        val addressProperty = schema.definitions["Profile"]!!.jsonObject["properties"]!!.jsonObject["address"]!!.jsonObject
+        val addressProperty =
+            schema.definitions["Profile"]!!
+                .jsonObject["properties"]!!
+                .jsonObject["address"]!!
+                .jsonObject
         assertEquals("#/components/schemas/Address", addressProperty[$$"$ref"]!!.jsonPrimitive.content)
     }
 
@@ -736,7 +834,11 @@ class OpenApiRendererTest {
     fun `nullable fields absent from example are not in required - node path`() {
         val node = TestSerialization.asJsonObject(ProfileResponse(id = "p1", name = "Alice"))
         val schema = renderer.toSchema(node, "Profile", "")
-        val required = schema.definitions["Profile"]!!.jsonObject["required"]!!.jsonArray.map { it.jsonPrimitive.content }
+        val required =
+            schema.definitions["Profile"]!!
+                .jsonObject["required"]!!
+                .jsonArray
+                .map { it.jsonPrimitive.content }
         assertFalse("address" in required)
         assertFalse("score" in required)
     }
@@ -751,7 +853,11 @@ class OpenApiRendererTest {
     @Test
     fun `nullable object field absent from example generates ref to nested type - object path`() {
         val schema = renderer.toSchema(ProfileResponse(id = "p1", name = "Alice"), "Profile", "")
-        val addressProperty = schema.definitions["Profile"]!!.jsonObject["properties"]!!.jsonObject["address"]!!.jsonObject
+        val addressProperty =
+            schema.definitions["Profile"]!!
+                .jsonObject["properties"]!!
+                .jsonObject["address"]!!
+                .jsonObject
         assertEquals("#/components/schemas/Address", addressProperty[$$"$ref"]!!.jsonPrimitive.content)
     }
 
@@ -771,7 +877,11 @@ class OpenApiRendererTest {
     @Test
     fun `nullable fields absent from example are not in required - object path`() {
         val schema = renderer.toSchema(ProfileResponse(id = "p1", name = "Alice"), "Profile", "")
-        val required = schema.definitions["Profile"]!!.jsonObject["required"]!!.jsonArray.map { it.jsonPrimitive.content }
+        val required =
+            schema.definitions["Profile"]!!
+                .jsonObject["required"]!!
+                .jsonArray
+                .map { it.jsonPrimitive.content }
         assertFalse("address" in required)
         assertFalse("score" in required)
     }
@@ -803,7 +913,11 @@ class OpenApiRendererTest {
     @Test
     fun `sealed discriminator mapping uses preferred schema names not SerialName values`() {
         val schema = renderer.toSchema(circleShapeNode(), "Shape", "")
-        val mapping = schema.definitions["Shape"]!!.jsonObject["discriminator"]!!.jsonObject["mapping"]!!.jsonObject
+        val mapping =
+            schema.definitions["Shape"]!!
+                .jsonObject["discriminator"]!!
+                .jsonObject["mapping"]!!
+                .jsonObject
         assertEquals("#/components/schemas/CircleShape", mapping["circle"]!!.jsonPrimitive.content)
         assertEquals("#/components/schemas/RectShape", mapping["rect"]!!.jsonPrimitive.content)
     }
@@ -838,14 +952,22 @@ class OpenApiRendererTest {
     @Test
     fun `MinLength annotation on string property emits minLength in schema - object path`() {
         val schema = renderer.toSchema(constrainedExample(), "ConstrainedRequest", "")
-        val prop = schema.definitions["ConstrainedRequest"]!!.jsonObject["properties"]!!.jsonObject["code"]!!.jsonObject
+        val prop =
+            schema.definitions["ConstrainedRequest"]!!
+                .jsonObject["properties"]!!
+                .jsonObject["code"]!!
+                .jsonObject
         assertEquals(2, prop["minLength"]!!.jsonPrimitive.content.toInt())
     }
 
     @Test
     fun `MinLength annotation retains base string type alongside constraint`() {
         val schema = renderer.toSchema(constrainedExample(), "ConstrainedRequest", "")
-        val prop = schema.definitions["ConstrainedRequest"]!!.jsonObject["properties"]!!.jsonObject["code"]!!.jsonObject
+        val prop =
+            schema.definitions["ConstrainedRequest"]!!
+                .jsonObject["properties"]!!
+                .jsonObject["code"]!!
+                .jsonObject
         assertEquals("string", prop["type"]!!.jsonPrimitive.content)
         assertEquals(2, prop["minLength"]!!.jsonPrimitive.content.toInt())
     }
@@ -853,49 +975,77 @@ class OpenApiRendererTest {
     @Test
     fun `MaxLength annotation on string property emits maxLength in schema`() {
         val schema = renderer.toSchema(constrainedExample(), "ConstrainedRequest", "")
-        val prop = schema.definitions["ConstrainedRequest"]!!.jsonObject["properties"]!!.jsonObject["label"]!!.jsonObject
+        val prop =
+            schema.definitions["ConstrainedRequest"]!!
+                .jsonObject["properties"]!!
+                .jsonObject["label"]!!
+                .jsonObject
         assertEquals(50, prop["maxLength"]!!.jsonPrimitive.content.toInt())
     }
 
     @Test
     fun `Pattern annotation on string property emits pattern in schema`() {
         val schema = renderer.toSchema(constrainedExample(), "ConstrainedRequest", "")
-        val prop = schema.definitions["ConstrainedRequest"]!!.jsonObject["properties"]!!.jsonObject["isoCode"]!!.jsonObject
+        val prop =
+            schema.definitions["ConstrainedRequest"]!!
+                .jsonObject["properties"]!!
+                .jsonObject["isoCode"]!!
+                .jsonObject
         assertEquals("[A-Z]{3}", prop["pattern"]!!.jsonPrimitive.content)
     }
 
     @Test
     fun `Format annotation on string property emits format in schema`() {
         val schema = renderer.toSchema(constrainedExample(), "ConstrainedRequest", "")
-        val prop = schema.definitions["ConstrainedRequest"]!!.jsonObject["properties"]!!.jsonObject["email"]!!.jsonObject
+        val prop =
+            schema.definitions["ConstrainedRequest"]!!
+                .jsonObject["properties"]!!
+                .jsonObject["email"]!!
+                .jsonObject
         assertEquals("email", prop["format"]!!.jsonPrimitive.content)
     }
 
     @Test
     fun `Minimum annotation on integer property emits minimum in schema`() {
         val schema = renderer.toSchema(constrainedExample(), "ConstrainedRequest", "")
-        val prop = schema.definitions["ConstrainedRequest"]!!.jsonObject["properties"]!!.jsonObject["count"]!!.jsonObject
+        val prop =
+            schema.definitions["ConstrainedRequest"]!!
+                .jsonObject["properties"]!!
+                .jsonObject["count"]!!
+                .jsonObject
         assertEquals(1.0, prop["minimum"]!!.jsonPrimitive.content.toDouble())
     }
 
     @Test
     fun `Maximum annotation on number property emits maximum in schema`() {
         val schema = renderer.toSchema(constrainedExample(), "ConstrainedRequest", "")
-        val prop = schema.definitions["ConstrainedRequest"]!!.jsonObject["properties"]!!.jsonObject["score"]!!.jsonObject
+        val prop =
+            schema.definitions["ConstrainedRequest"]!!
+                .jsonObject["properties"]!!
+                .jsonObject["score"]!!
+                .jsonObject
         assertEquals(999.0, prop["maximum"]!!.jsonPrimitive.content.toDouble())
     }
 
     @Test
     fun `MinItems annotation on list property emits minItems in schema`() {
         val schema = renderer.toSchema(constrainedExample(), "ConstrainedRequest", "")
-        val prop = schema.definitions["ConstrainedRequest"]!!.jsonObject["properties"]!!.jsonObject["requiredItems"]!!.jsonObject
+        val prop =
+            schema.definitions["ConstrainedRequest"]!!
+                .jsonObject["properties"]!!
+                .jsonObject["requiredItems"]!!
+                .jsonObject
         assertEquals(1, prop["minItems"]!!.jsonPrimitive.content.toInt())
     }
 
     @Test
     fun `MaxItems annotation on list property emits maxItems in schema`() {
         val schema = renderer.toSchema(constrainedExample(), "ConstrainedRequest", "")
-        val prop = schema.definitions["ConstrainedRequest"]!!.jsonObject["properties"]!!.jsonObject["optionalTags"]!!.jsonObject
+        val prop =
+            schema.definitions["ConstrainedRequest"]!!
+                .jsonObject["properties"]!!
+                .jsonObject["optionalTags"]!!
+                .jsonObject
         assertEquals(5, prop["maxItems"]!!.jsonPrimitive.content.toInt())
     }
 
@@ -903,14 +1053,22 @@ class OpenApiRendererTest {
     fun `MinLength annotation on string property emits minLength in schema - node path`() {
         val node = TestSerialization.asJsonObject(constrainedExample())
         val schema = renderer.toSchema(node, "ConstrainedRequest", "")
-        val prop = schema.definitions["ConstrainedRequest"]!!.jsonObject["properties"]!!.jsonObject["code"]!!.jsonObject
+        val prop =
+            schema.definitions["ConstrainedRequest"]!!
+                .jsonObject["properties"]!!
+                .jsonObject["code"]!!
+                .jsonObject
         assertEquals(2, prop["minLength"]!!.jsonPrimitive.content.toInt())
     }
 
     @Test
     fun `constraint annotation inapplicable to property type is not emitted`() {
         val schema = renderer.toSchema(ConstraintMismatchRequest(value = 42), "ConstraintMismatch", "")
-        val prop = schema.definitions["ConstraintMismatch"]!!.jsonObject["properties"]!!.jsonObject["value"]!!.jsonObject
+        val prop =
+            schema.definitions["ConstraintMismatch"]!!
+                .jsonObject["properties"]!!
+                .jsonObject["value"]!!
+                .jsonObject
         assertEquals("integer", prop["type"]!!.jsonPrimitive.content)
         assertFalse("minLength" in prop.keys)
     }
@@ -920,8 +1078,20 @@ class OpenApiRendererTest {
         val node = TestSerialization.asJsonObject(SquareShape(name = "s", side = 3.0))
         val schema = renderer.toSchema(node, "ConstrainedShape", "")
         val prop = schema.definitions["SquareShape"]!!.jsonObject["properties"]!!.jsonObject
-        assertEquals(1, prop["name"]!!.jsonObject["minLength"]!!.jsonPrimitive.content.toInt())
-        assertEquals(0.1, prop["side"]!!.jsonObject["minimum"]!!.jsonPrimitive.content.toDouble())
+        assertEquals(
+            1,
+            prop["name"]!!
+                .jsonObject["minLength"]!!
+                .jsonPrimitive.content
+                .toInt(),
+        )
+        assertEquals(
+            0.1,
+            prop["side"]!!
+                .jsonObject["minimum"]!!
+                .jsonPrimitive.content
+                .toDouble(),
+        )
     }
 
     // --- parameterSchemas ---
@@ -942,7 +1112,10 @@ class OpenApiRendererTest {
                 "",
             )
         val sortProperty =
-            schema.definitions["SortedItem"]!!.jsonObject["properties"]!!.jsonObject["sortOrder"]!!.jsonObject
+            schema.definitions["SortedItem"]!!
+                .jsonObject["properties"]!!
+                .jsonObject["sortOrder"]!!
+                .jsonObject
         assertEquals("#/components/schemas/SortDirection", sortProperty[$$"$ref"]!!.jsonPrimitive.content)
     }
 
@@ -1028,7 +1201,11 @@ class OpenApiRendererTest {
     fun `injectComponentParameters injected enum schema has correct type and values`() {
         val refSchema = buildJsonObject { put("\$ref", "#/components/schemas/SortDirection") }
         val result = paramSchemaRenderer.api(minimalApi(listOf(sortParam(refSchema))))
-        val def = result.jsonObject["components"]!!.jsonObject["schemas"]!!.jsonObject["SortDirection"]!!.jsonObject
+        val def =
+            result.jsonObject["components"]!!
+                .jsonObject["schemas"]!!
+                .jsonObject["SortDirection"]!!
+                .jsonObject
         assertEquals("string", def["type"]!!.jsonPrimitive.content)
         val enumValues = def["enum"]!!.jsonArray.map { it.jsonPrimitive.content }
         assertContains(enumValues, "ASC")
