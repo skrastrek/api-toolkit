@@ -1,5 +1,10 @@
 package io.skrastrek.api.toolkit.http4k.auth
 
+import org.http4k.core.Method
+import org.http4k.core.Request
+import org.http4k.core.Response
+import org.http4k.core.Status.Companion.OK
+import org.http4k.lens.RequestKey
 import java.math.BigInteger
 import java.security.KeyPair
 import java.security.KeyPairGenerator
@@ -10,6 +15,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 private const val ISSUER = "https://auth.example.com"
@@ -136,9 +143,109 @@ class JwtValidatorTest {
     }
 }
 
+// --- Filter tests ---
+
+private data class JwtPrincipal(
+    val sub: String,
+)
+
+class JwtFilterTest {
+    private val keyPair: KeyPair = KeyPairGenerator.getInstance("RSA").apply { initialize(2048) }.generateKeyPair()
+    private val validator =
+        JwtValidator(
+            issuer = ISSUER,
+            allowedClientIds = setOf(CLIENT_ID),
+            jwkSetProvider = fakeJwkSetProvider(keyPair),
+        )
+    private val principalLens = RequestKey.optional<JwtPrincipal>("principal")
+    private val toPrincipal: (JwtClaims) -> JwtPrincipal = { JwtPrincipal(it.sub) }
+
+    @Test
+    fun `authFilter injects principal from valid bearer token`() {
+        val token = buildToken(keyPair = keyPair, sub = "user-1")
+        var capturedPrincipal: JwtPrincipal? = null
+        val filter = validator.authFilter(principalLens, toPrincipal)
+
+        val handler =
+            filter { request ->
+                capturedPrincipal = principalLens(request)
+                Response(OK)
+            }
+
+        handler(Request(Method.GET, "/").header("Authorization", "Bearer $token"))
+
+        assertEquals(JwtPrincipal("user-1"), capturedPrincipal)
+    }
+
+    @Test
+    fun `authFilter throws MissingToken when no bearer token`() {
+        val handler = validator.authFilter(principalLens, toPrincipal)({ Response(OK) })
+
+        assertFailsWith<MissingToken> { handler(Request(Method.GET, "/")) }
+    }
+
+    @Test
+    fun `optionalAuthFilter sets principal when bearer token present`() {
+        val token = buildToken(keyPair = keyPair, sub = "user-2")
+        var capturedPrincipal: JwtPrincipal? = null
+        val filter = validator.optionalAuthFilter(principalLens, toPrincipal)
+
+        val handler =
+            filter { request ->
+                capturedPrincipal = principalLens(request)
+                Response(OK)
+            }
+
+        handler(Request(Method.GET, "/").header("Authorization", "Bearer $token"))
+
+        assertNotNull(capturedPrincipal)
+        assertEquals("user-2", capturedPrincipal?.sub)
+    }
+
+    @Test
+    fun `optionalAuthFilter passes through without principal when no bearer token`() {
+        var capturedPrincipal: JwtPrincipal? = null
+        val filter = validator.optionalAuthFilter(principalLens, toPrincipal)
+
+        val handler =
+            filter { request ->
+                capturedPrincipal = principalLens(request)
+                Response(OK)
+            }
+
+        handler(Request(Method.GET, "/"))
+
+        assertNull(capturedPrincipal)
+    }
+
+    @Test
+    fun `authOrPrincipalFilter skips JWT when principal already set`() {
+        val existing = JwtPrincipal("existing")
+        var capturedPrincipal: JwtPrincipal? = null
+        val filter = validator.authOrPrincipalFilter(principalLens, toPrincipal)
+
+        val handler =
+            filter { request ->
+                capturedPrincipal = principalLens(request)
+                Response(OK)
+            }
+
+        handler(principalLens(existing, Request(Method.GET, "/")))
+
+        assertEquals(existing, capturedPrincipal)
+    }
+
+    @Test
+    fun `authOrPrincipalFilter throws MissingToken when no principal and no bearer token`() {
+        val filter = validator.authOrPrincipalFilter(principalLens, toPrincipal)
+        val handler = filter { Response(OK) }
+
+        assertFailsWith<MissingToken> { handler(Request(Method.GET, "/")) }
+    }
+}
+
 // --- Test helpers ---
 
-private val jsonPrimitive get() = kotlinx.serialization.json.JsonPrimitive("_")
 private val kotlinx.serialization.json.JsonElement.jsonPrimitive
     get() = this as? kotlinx.serialization.json.JsonPrimitive
 

@@ -2,8 +2,6 @@ package io.skrastrek.api.toolkit.http4k.auth
 
 import kotlinx.serialization.Serializable
 import java.util.Base64
-import javax.crypto.Mac
-import javax.crypto.spec.SecretKeySpec
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -19,9 +17,6 @@ private data class TestPayload(
 )
 
 private val testSerializer = TestPayload.serializer()
-private val testPrincipalLens =
-    org.http4k.lens.RequestKey
-        .optional<TestPayload>("test-principal")
 
 class HmacTokenTest {
     private val generator = HmacAuthTokenGenerator(SECRET, testSerializer)
@@ -76,13 +71,13 @@ class HmacTokenTest {
     fun `invalid base64 signature throws MalformedHmacToken`() {
         val token = generator.generateToken(TestPayload("alice"), now)
         val e = assertFailsWith<MalformedHmacToken> { validator.validate("${token.substringBeforeLast(".")}.!!!invalid!!!") }
-        assert(e.message!!.contains("invalid signature encoding"))
+        assert(e.message.contains("invalid signature encoding"))
     }
 
     @Test
     fun `no dot separator throws MalformedHmacToken`() {
         val e = assertFailsWith<MalformedHmacToken> { validator.validate("nodottoken") }
-        assert(e.message!!.contains("missing separator"))
+        assert(e.message.contains("missing separator"))
     }
 
     @Test
@@ -90,6 +85,6 @@ class HmacTokenTest {
         val envelopeEncoded = encoder.encodeToString("not-json".toByteArray(Charsets.UTF_8))
         val sig = encoder.encodeToString(hmacSha256(envelopeEncoded, SECRET))
         val e = assertFailsWith<MalformedHmacToken> { validator.validate("$envelopeEncoded.$sig") }
-        assert(e.message!!.contains("invalid JSON envelope"))
+        assert(e.message.contains("invalid JSON envelope"))
     }
 }
