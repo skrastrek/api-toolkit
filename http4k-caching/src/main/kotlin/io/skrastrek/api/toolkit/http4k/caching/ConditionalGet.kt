@@ -8,8 +8,8 @@ import org.http4k.core.Response
 import kotlin.time.Instant
 
 context(request: Request)
-fun <T : Versionable> T.ifNoneMatch(
-    noneMatch: (ETag?) -> Response,
+suspend fun <T : Versionable> T.ifNoneMatch(
+    noneMatch: suspend (ETag?) -> Response,
     match: (ETag) -> Response,
 ): Response =
     request
@@ -23,8 +23,8 @@ fun <T : Versionable> T.ifNoneMatch(
         } ?: noneMatch(null)
 
 context(request: Request)
-fun <T : Versionable> List<T>.ifNoneMatch(
-    noneMatch: (ETag?) -> Response,
+suspend fun <T : Versionable> List<T>.ifNoneMatch(
+    noneMatch: suspend (ETag?) -> Response,
     match: (ETag) -> Response,
 ): Response =
     request
@@ -38,8 +38,8 @@ fun <T : Versionable> List<T>.ifNoneMatch(
         } ?: noneMatch(null)
 
 context(request: Request)
-fun <T : Modifiable> T.ifModifiedSince(
-    modifiedSince: (Instant?) -> Response,
+suspend fun <T : Modifiable> T.ifModifiedSince(
+    modifiedSince: suspend (Instant?) -> Response,
     notModifiedSince: (Instant) -> Response,
 ): Response =
     request
@@ -53,8 +53,8 @@ fun <T : Modifiable> T.ifModifiedSince(
         } ?: modifiedSince(null)
 
 context(request: Request)
-fun <T : Modifiable> List<T>.ifAnyModifiedSince(
-    modifiedSince: (Instant?) -> Response,
+suspend fun <T : Modifiable> List<T>.ifAnyModifiedSince(
+    modifiedSince: suspend (Instant?) -> Response,
     notModifiedSince: (Instant) -> Response,
 ): Response =
     request
