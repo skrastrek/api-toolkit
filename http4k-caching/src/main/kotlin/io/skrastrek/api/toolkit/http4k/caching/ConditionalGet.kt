@@ -9,13 +9,14 @@ import kotlin.time.Instant
 
 context(request: Request)
 suspend fun <T : Versionable> T.ifNoneMatch(
+    seed: String = "",
     noneMatch: suspend (ETag?) -> Response,
     match: (ETag) -> Response,
 ): Response =
     request
         .ifNoneMatch()
         ?.let { eTag ->
-            if (eTag.value == md5()) {
+            if (eTag.value == md5(seed)) {
                 match(eTag)
             } else {
                 noneMatch(eTag)
@@ -24,13 +25,14 @@ suspend fun <T : Versionable> T.ifNoneMatch(
 
 context(request: Request)
 suspend fun <T : Versionable> List<T>.ifNoneMatch(
+    seed: String = "",
     noneMatch: suspend (ETag?) -> Response,
     match: (ETag) -> Response,
 ): Response =
     request
         .ifNoneMatch()
         ?.let { eTag ->
-            if (eTag.value == md5()) {
+            if (eTag.value == md5(seed)) {
                 match(eTag)
             } else {
                 noneMatch(eTag)

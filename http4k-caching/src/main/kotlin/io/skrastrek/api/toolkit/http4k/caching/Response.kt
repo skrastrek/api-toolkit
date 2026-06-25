@@ -7,12 +7,12 @@ import org.http4k.core.Uri
 import org.http4k.core.with
 import org.http4k.lens.Header
 
-fun <T : Versionable> T.notModifiedResponse() =
+fun <T : Versionable> T.notModifiedResponse(seed: String = "") =
     Response(NOT_MODIFIED)
-        .eTag(this)
+        .eTag(this, seed)
 
-fun <T : Versionable> List<T>.notModifiedResponse() =
+fun <T : Versionable> List<T>.notModifiedResponse(seed: String = "") =
     Response(NOT_MODIFIED)
-        .eTag(this)
+        .eTag(this, seed)
 
 fun Response.contentLocation(uri: Uri) = with(Header.CONTENT_LOCATION of uri)
