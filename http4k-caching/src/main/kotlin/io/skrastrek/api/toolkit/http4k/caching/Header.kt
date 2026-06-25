@@ -35,9 +35,15 @@ fun Request.ifModifiedSince(timestamp: Instant) = with(IF_MODIFIED_SINCE of time
 
 fun Response.eTag(value: ETag) = with(ETAG of value)
 
-fun Response.eTag(value: Versionable) = eTag(ETag.strong(value.md5()))
+fun Response.eTag(
+    value: Versionable,
+    seed: String = "",
+) = eTag(ETag.strong(value.md5(seed)))
 
-fun Response.eTag(value: List<Versionable>) = eTag(ETag.strong(value.md5()))
+fun Response.eTag(
+    value: List<Versionable>,
+    seed: String = "",
+) = eTag(ETag.strong(value.md5(seed)))
 
 fun Response.lastModified(timestamp: Instant) = with(LAST_MODIFIED of timestamp)
 

@@ -7,6 +7,7 @@ import org.http4k.core.Status.Companion.OK
 import org.http4k.core.Uri
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 
 class ResponseTest {
@@ -45,6 +46,16 @@ class ResponseTest {
 
         assertNotNull(response.header("ETag"))
         assertEquals(Response(NOT_MODIFIED).eTag(items).header("ETag"), response.header("ETag"))
+    }
+
+    @Test
+    fun `notModifiedResponse with seed sets ETag matching seeded versionable`() {
+        val item = Item("a")
+
+        val response = item.notModifiedResponse(seed = "lang=no")
+
+        assertEquals(Response(NOT_MODIFIED).eTag(item, seed = "lang=no").header("ETag"), response.header("ETag"))
+        assertNotEquals(Response(NOT_MODIFIED).eTag(item).header("ETag"), response.header("ETag"))
     }
 
     @Test

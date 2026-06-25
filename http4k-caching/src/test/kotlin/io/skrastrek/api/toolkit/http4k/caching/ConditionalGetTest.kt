@@ -89,6 +89,59 @@ class ConditionalGetTest {
         }
 
     @Test
+    fun `if none match - ok (seed changes version)`() =
+        runTest {
+            val versionable =
+                DummyVersionable(
+                    property1 = "value1",
+                    property2 = 42,
+                    property3 = listOf("item1", "item2"),
+                )
+
+            // Request carries the bare (seedless) ETag, but the served representation now has a seed.
+            val request =
+                Request(Method.GET, "/")
+                    .ifNoneMatch(ETag.strong(versionable.md5()))
+
+            val response =
+                with(request) {
+                    versionable.ifNoneMatch(
+                        seed = "lang=no",
+                        noneMatch = { _ -> Response(OK) },
+                        match = { _ -> Response(NOT_MODIFIED) },
+                    )
+                }
+
+            assertEquals(OK, response.status)
+        }
+
+    @Test
+    fun `if none match - not modified (matching seed)`() =
+        runTest {
+            val versionable =
+                DummyVersionable(
+                    property1 = "value1",
+                    property2 = 42,
+                    property3 = listOf("item1", "item2"),
+                )
+
+            val request =
+                Request(Method.GET, "/")
+                    .ifNoneMatch(ETag.strong(versionable.md5(seed = "lang=no")))
+
+            val response =
+                with(request) {
+                    versionable.ifNoneMatch(
+                        seed = "lang=no",
+                        noneMatch = { _ -> Response(OK) },
+                        match = { _ -> Response(NOT_MODIFIED) },
+                    )
+                }
+
+            assertEquals(NOT_MODIFIED, response.status)
+        }
+
+    @Test
     fun `if modified since - ok`() =
         runTest {
             val timestamp = Instant.fromEpochSeconds(0)
