@@ -66,4 +66,25 @@ class ResponseTest {
 
         assertEquals("/resources/123", response.header("content-location"))
     }
+
+    @Test
+    fun `proxyRevalidate sets Cache-Control header`() {
+        val response = Response(OK).proxyRevalidate()
+
+        assertEquals("proxy-revalidate", response.header("Cache-Control"))
+    }
+
+    @Test
+    fun `proxyRevalidate appends to existing Cache-Control directives`() {
+        val response = Response(OK).header("Cache-Control", "private, max-age=60").proxyRevalidate()
+
+        assertEquals("private, max-age=60, proxy-revalidate", response.header("Cache-Control"))
+    }
+
+    @Test
+    fun `proxyRevalidate does not duplicate the directive`() {
+        val response = Response(OK).proxyRevalidate().proxyRevalidate()
+
+        assertEquals("proxy-revalidate", response.header("Cache-Control"))
+    }
 }
