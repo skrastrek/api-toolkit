@@ -9,7 +9,7 @@ maven-publish = "0.36.0"
 # Libs
 aws-lambda-kotlin = "1.3.2"
 
-http4k = "6.53.0.0"
+http4k = "6.54.0.0"
 
 kotlinx-coroutines = "1.11.0"
 kotlinx-datetime = "0.8.0"
