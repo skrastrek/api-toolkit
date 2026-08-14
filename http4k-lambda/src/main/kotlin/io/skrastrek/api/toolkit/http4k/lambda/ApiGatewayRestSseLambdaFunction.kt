@@ -3,14 +3,13 @@ package io.skrastrek.api.toolkit.http4k.lambda
 import com.amazonaws.services.lambda.runtime.Context
 import io.skrastrek.aws.lambda.kotlin.coroutines.SuspendingRequestStreamHandler
 import io.skrastrek.aws.lambda.kotlin.events.ApiGatewayProxyV1Event
+import io.skrastrek.aws.lambda.kotlin.events.ApiGatewayProxyV1Serializers
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.put
-import kotlinx.serialization.modules.SerializersModule
 import org.http4k.core.Method
 import org.http4k.core.Parameters
 import org.http4k.core.Request
@@ -23,27 +22,11 @@ import org.http4k.sse.SseMessage
 import java.io.InputStream
 import java.io.OutputStream
 import java.util.Base64
-import io.skrastrek.aws.lambda.kotlin.core.json as awsLambdaKotinCoreJson
-
-/**
- * GraalVM native image requires compile-time generated serializers via @Serializable — no reflection.
- * Extends awsLambdaJson (explicitNulls=false, ignoreUnknownKeys=true) with:
- *   coerceInputValues=true  — API Gateway sends null for absent maps (e.g. queryStringParameters);
- *                             coercion maps null → emptyMap() for non-nullable fields with defaults.
- *   contextual serializer   — registers the compile-time ApiGatewayProxyV1Event serializer
- *                             explicitly so the native binary can find it without reflection.
- */
-private val json =
-    Json(awsLambdaKotinCoreJson) {
-        serializersModule =
-            SerializersModule {
-                contextual(ApiGatewayProxyV1Event::class, ApiGatewayProxyV1Event.serializer())
-            }
-    }
 
 open class ApiGatewayRestSseLambdaFunction(
     private val sseHandler: SseHandler,
-) : SuspendingRequestStreamHandler {
+) : SuspendingRequestStreamHandler,
+    ApiGatewayProxyV1Serializers {
     /**
      * The body is confined to [IO] in full. Every step blocks — reading [input], the http4k
      * [SseHandler] call, and each write to [output] — and the consumer loop runs for as long as the
@@ -61,7 +44,7 @@ open class ApiGatewayRestSseLambdaFunction(
         withContext(IO) {
             val request =
                 runCatching {
-                    input.toApiGatewayProxyV1Event().toHttp4kRequest()
+                    decodeEvent(input).toHttp4kRequest()
                 }.getOrElse { e ->
                     context.logger.log("Could not parse request: ${e.stackTraceToString()}")
                     output.writePrelude(500, emptyMap())
@@ -108,8 +91,17 @@ open class ApiGatewayRestSseLambdaFunction(
     }
 }
 
+/**
+ * Decodes the invocation payload with the handler's own [ApiGatewayProxyV1Serializers.json], so a
+ * subclass that overrides `json` changes how its own events are parsed.
+ *
+ * Passing [ApiGatewayProxyV1Serializers.deserializer] explicitly keeps serializer lookup off the
+ * reflective path, which a GraalVM native image cannot follow without extra configuration. This is
+ * what this file previously achieved by registering a contextual serializer in a private `Json`.
+ */
 @OptIn(ExperimentalSerializationApi::class)
-internal fun InputStream.toApiGatewayProxyV1Event(): ApiGatewayProxyV1Event = json.decodeFromStream(this)
+internal fun ApiGatewayProxyV1Serializers.decodeEvent(input: InputStream): ApiGatewayProxyV1Event =
+    json.decodeFromStream(deserializer, input)
 
 internal fun ApiGatewayProxyV1Event.toHttp4kRequest(): Request {
     val headers: Parameters =

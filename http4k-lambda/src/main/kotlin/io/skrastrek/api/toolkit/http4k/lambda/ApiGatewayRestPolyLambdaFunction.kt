@@ -2,6 +2,7 @@ package io.skrastrek.api.toolkit.http4k.lambda
 
 import com.amazonaws.services.lambda.runtime.Context
 import io.skrastrek.aws.lambda.kotlin.coroutines.SuspendingRequestStreamHandler
+import io.skrastrek.aws.lambda.kotlin.events.ApiGatewayProxyV1Serializers
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.withContext
 import org.http4k.core.HttpHandler
@@ -23,7 +24,8 @@ import java.io.OutputStream
  */
 open class ApiGatewayRestPolyLambdaFunction(
     private val polyHandler: PolyHandler,
-) : SuspendingRequestStreamHandler {
+) : SuspendingRequestStreamHandler,
+    ApiGatewayProxyV1Serializers {
     /**
      * The body is confined to [IO] in full: parsing, both http4k handler calls, and every write to
      * [output] block, and on the SSE path the consumer loop lives as long as the client stays
@@ -42,7 +44,7 @@ open class ApiGatewayRestPolyLambdaFunction(
         withContext(IO) {
             val request =
                 runCatching {
-                    input.toApiGatewayProxyV1Event().toHttp4kRequest()
+                    decodeEvent(input).toHttp4kRequest()
                 }.getOrElse { e ->
                     context.logger.log("Could not parse request: ${e.stackTraceToString()}")
                     output.writePrelude(500, emptyMap())

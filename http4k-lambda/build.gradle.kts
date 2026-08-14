@@ -1,7 +1,8 @@
 dependencies {
-    // api: SuspendingRequestStreamHandler is a public supertype of the lambda functions here.
+    // api: SuspendingRequestStreamHandler and ApiGatewayProxyV1Serializers are public supertypes of
+    // the lambda functions here, and subclasses override `json` through the latter.
     api(libs.aws.lambda.kotlin.coroutines)
-    implementation(libs.aws.lambda.kotlin.events)
+    api(libs.aws.lambda.kotlin.events)
     api(libs.http4k.core)
     api(libs.http4k.realtime.core)
     implementation(libs.http4k.serverless.lambda)
