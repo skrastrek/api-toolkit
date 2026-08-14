@@ -96,8 +96,14 @@ open class ApiGatewayRestSseLambdaFunction(
  * subclass that overrides `json` changes how its own events are parsed.
  *
  * Passing [ApiGatewayProxyV1Serializers.deserializer] explicitly keeps serializer lookup off the
- * reflective path, which a GraalVM native image cannot follow without extra configuration. This is
- * what this file previously achieved by registering a contextual serializer in a private `Json`.
+ * reflective path, which a GraalVM native image cannot follow without extra configuration.
+ *
+ * This file used to aim at that by registering a contextual serializer in a private `Json` and
+ * decoding through the reified `decodeFromStream<T>` overload. That never took effect:
+ * `SerializersModule.serializer(KType)` resolves the compiled serializer first and reaches
+ * `getContextual` only for types that have none, so the generated serializer always won and the
+ * registration was inert. Supplying the strategy directly is what actually avoids the lookup —
+ * see `SerializersModuleIndependenceTest`.
  */
 @OptIn(ExperimentalSerializationApi::class)
 internal fun ApiGatewayProxyV1Serializers.decodeEvent(input: InputStream): ApiGatewayProxyV1Event =
