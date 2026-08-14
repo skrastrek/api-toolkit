@@ -36,8 +36,10 @@ fun apiGatewayProxyV1EventJson(
     queryStringParameters: Map<String, List<String>> = emptyMap(),
     body: String? = null,
     isBase64Encoded: Boolean = false,
+    unknownFields: Map<String, String> = emptyMap(),
 ): String =
     buildJsonObject {
+        unknownFields.forEach { (k, v) -> put(k, v) }
         put("resource", path)
         put("path", path)
         put("httpMethod", httpMethod)
