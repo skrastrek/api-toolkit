@@ -1,8 +1,10 @@
 package io.skrastrek.api.toolkit.http4k.lambda
 
 import com.amazonaws.services.lambda.runtime.Context
-import com.amazonaws.services.lambda.runtime.RequestStreamHandler
+import io.skrastrek.aws.lambda.kotlin.coroutines.SuspendingRequestStreamHandler
 import io.skrastrek.aws.lambda.kotlin.events.ApiGatewayProxyV1Event
+import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
@@ -41,56 +43,67 @@ private val json =
 
 open class ApiGatewayRestSseLambdaFunction(
     private val sseHandler: SseHandler,
-) : RequestStreamHandler {
-    override fun handleRequest(
-        inputStream: InputStream,
-        outputStream: OutputStream,
+) : SuspendingRequestStreamHandler {
+    /**
+     * The body is confined to [IO] in full. Every step blocks — reading [input], the http4k
+     * [SseHandler] call, and each write to [output] — and the consumer loop runs for as long as the
+     * client stays subscribed, which for SSE is the point. Running that directly on the caller's
+     * dispatcher would pin one of its threads for the whole connection.
+     *
+     * On the AWS managed Java runtime the inherited `handleRequest` bridges here via `runBlocking`;
+     * a custom/native runtime calls this method directly and never pays for that bridge.
+     */
+    override suspend fun handle(
+        input: InputStream,
+        output: OutputStream,
         context: Context,
     ) {
-        val request =
-            runCatching {
-                inputStream.toApiGatewayProxyV1Event().toHttp4kRequest()
-            }.getOrElse { e ->
-                context.logger.log("Could not parse request: ${e.stackTraceToString()}")
-                outputStream.writePrelude(500, emptyMap())
-                outputStream.flush()
-                return
-            }
-
-        val sseResponse =
-            runCatching {
-                sseHandler(request)
-            }.getOrElse { e ->
-                context.logger.log("Unhandled exception: ${e.stackTraceToString()}")
-                outputStream.writePrelude(500, emptyMap())
-                outputStream.flush()
-                return
-            }
-
-        outputStream.writePrelude(
-            sseResponse.status.code,
-            buildMap {
-                put("Content-Type", "text/event-stream")
-                put("Cache-Control", "no-cache, no-store")
-                sseResponse.headers.forEach { (k, v) -> if (v != null) put(k, v) }
-            },
-        )
-        outputStream.flush()
-
-        val sse =
-            object : PushAdaptingSse(request) {
-                override fun send(message: SseMessage): Sse {
-                    outputStream.write(message.toMessage().toByteArray(Charsets.UTF_8))
-                    outputStream.flush()
-                    return this
+        withContext(IO) {
+            val request =
+                runCatching {
+                    input.toApiGatewayProxyV1Event().toHttp4kRequest()
+                }.getOrElse { e ->
+                    context.logger.log("Could not parse request: ${e.stackTraceToString()}")
+                    output.writePrelude(500, emptyMap())
+                    output.flush()
+                    return@withContext
                 }
-            }
 
-        try {
-            sseResponse(sse)
-        } finally {
-            sse.triggerClose()
-            outputStream.flush()
+            val sseResponse =
+                runCatching {
+                    sseHandler(request)
+                }.getOrElse { e ->
+                    context.logger.log("Unhandled exception: ${e.stackTraceToString()}")
+                    output.writePrelude(500, emptyMap())
+                    output.flush()
+                    return@withContext
+                }
+
+            output.writePrelude(
+                sseResponse.status.code,
+                buildMap {
+                    put("Content-Type", "text/event-stream")
+                    put("Cache-Control", "no-cache, no-store")
+                    sseResponse.headers.forEach { (k, v) -> if (v != null) put(k, v) }
+                },
+            )
+            output.flush()
+
+            val sse =
+                object : PushAdaptingSse(request) {
+                    override fun send(message: SseMessage): Sse {
+                        output.write(message.toMessage().toByteArray(Charsets.UTF_8))
+                        output.flush()
+                        return this
+                    }
+                }
+
+            try {
+                sseResponse(sse)
+            } finally {
+                sse.triggerClose()
+                output.flush()
+            }
         }
     }
 }

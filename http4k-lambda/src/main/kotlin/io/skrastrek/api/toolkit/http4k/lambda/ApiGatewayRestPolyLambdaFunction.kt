@@ -1,7 +1,9 @@
 package io.skrastrek.api.toolkit.http4k.lambda
 
 import com.amazonaws.services.lambda.runtime.Context
-import com.amazonaws.services.lambda.runtime.RequestStreamHandler
+import io.skrastrek.aws.lambda.kotlin.coroutines.SuspendingRequestStreamHandler
+import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.withContext
 import org.http4k.core.HttpHandler
 import org.http4k.core.PolyHandler
 import org.http4k.core.Request
@@ -21,42 +23,54 @@ import java.io.OutputStream
  */
 open class ApiGatewayRestPolyLambdaFunction(
     private val polyHandler: PolyHandler,
-) : RequestStreamHandler {
-    override fun handleRequest(
-        inputStream: InputStream,
-        outputStream: OutputStream,
+) : SuspendingRequestStreamHandler {
+    /**
+     * The body is confined to [IO] in full: parsing, both http4k handler calls, and every write to
+     * [output] block, and on the SSE path the consumer loop lives as long as the client stays
+     * subscribed. Running that directly on the caller's dispatcher would pin one of its threads for
+     * the whole invocation.
+     *
+     * On the AWS managed Java runtime the inherited `handleRequest` bridges here via `runBlocking`;
+     * a custom/native runtime calls this method directly and never pays for that bridge. The
+     * private helpers below stay blocking on purpose — they only ever run inside this [IO] block.
+     */
+    override suspend fun handle(
+        input: InputStream,
+        output: OutputStream,
         context: Context,
     ) {
-        val request =
-            runCatching {
-                inputStream.toApiGatewayProxyV1Event().toHttp4kRequest()
-            }.getOrElse { e ->
-                context.logger.log("Could not parse request: ${e.stackTraceToString()}")
-                outputStream.writePrelude(500, emptyMap())
-                outputStream.flush()
-                return
+        withContext(IO) {
+            val request =
+                runCatching {
+                    input.toApiGatewayProxyV1Event().toHttp4kRequest()
+                }.getOrElse { e ->
+                    context.logger.log("Could not parse request: ${e.stackTraceToString()}")
+                    output.writePrelude(500, emptyMap())
+                    output.flush()
+                    return@withContext
+                }
+
+            val acceptsEventStream =
+                request
+                    .headerValues("Accept")
+                    .flatMap { (it ?: "").split(",") }
+                    .any { it.trim().startsWith("text/event-stream") }
+
+            if (acceptsEventStream) {
+                val sseHandler = polyHandler.sse
+                if (sseHandler != null) {
+                    handleSse(request, output, context, sseHandler)
+                    return@withContext
+                }
             }
 
-        val acceptsEventStream =
-            request
-                .headerValues("Accept")
-                .flatMap { (it ?: "").split(",") }
-                .any { it.trim().startsWith("text/event-stream") }
-
-        if (acceptsEventStream) {
-            val sseHandler = polyHandler.sse
-            if (sseHandler != null) {
-                handleSse(request, outputStream, context, sseHandler)
-                return
+            val httpHandler = polyHandler.http
+            if (httpHandler != null) {
+                handleHttp(request, output, context, httpHandler)
+            } else {
+                output.writePrelude(404, emptyMap())
+                output.flush()
             }
-        }
-
-        val httpHandler = polyHandler.http
-        if (httpHandler != null) {
-            handleHttp(request, outputStream, context, httpHandler)
-        } else {
-            outputStream.writePrelude(404, emptyMap())
-            outputStream.flush()
         }
     }
 
