@@ -7,7 +7,7 @@ ktlint = "14.2.0"
 maven-publish = "0.37.0"
 
 # Libs
-aws-lambda-kotlin = "2.1.2"
+aws-lambda-kotlin = "2.1.4"
 
 http4k = "6.61.0.0"
 
